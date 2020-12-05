@@ -52,6 +52,11 @@ Controlling WS2812 LEDs connected to your ESP32 via UDP.
 - Response: `"ok\n"`
 - Example: `"\x21\x09hello1234"` sets WiFi Password to "hello1234"
 
+### Set MCP23017 Output (0x30)
+- Layout: `0x30 <8-bit Port A state> <8-bit Port B state>`
+- Response: `"ok\n"`
+- Example: `30ffff` set all 16 ports to HIGH
+
 ### Reboot (0xff)
 - Layout: `0xff`
 - Response: `"ok\n"`

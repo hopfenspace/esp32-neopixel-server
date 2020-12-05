@@ -1,6 +1,7 @@
 #include <WiFi.h>
 #include <Preferences.h>
 #include <Adafruit_NeoPixel.h>
+#include <MCP23017.h>
 
 #define DEFAULT_WS2812_COUNT 512
 #define WS2812_PIN 15
@@ -12,6 +13,8 @@
 WiFiUDP server;
 Preferences preferences;
 Adafruit_NeoPixel pixels(DEFAULT_WS2812_COUNT, WS2812_PIN, NEO_GRB + NEO_KHZ800);
+TwoWire i2cInstance = TwoWire(0);
+MCP23017 mcp = MCP23017(0x20, i2cInstance);
 
 const uint32_t bootColors[] = {
 	0x000000,
@@ -36,6 +39,16 @@ void setup()
 	for(int i = 0; i < BOOTCOLORS_COUNT; i++)
 		pixels.setPixelColor(i, bootColors[i]);
 	pixels.show();
+
+
+	i2cInstance.begin(21, 22, 100000);
+	mcp.init();
+	mcp.portMode(MCP23017Port::A, 0);
+	mcp.portMode(MCP23017Port::B, 0);
+	mcp.writeRegister(MCP23017Register::IPOL_A, 0x00);
+	mcp.writeRegister(MCP23017Register::IPOL_B, 0x00);
+	mcp.writeRegister(MCP23017Register::GPIO_A, 0x00);
+	mcp.writeRegister(MCP23017Register::GPIO_B, 0x00);
 
 
 	preferences.begin("ws2812server", false);
@@ -159,6 +172,12 @@ void loop()
 				break;
 			case 0x22: // set wifi password
 				preferences.putString(PREFERENCE_WIFI_PSK, readString());
+				sendOk();
+				break;
+
+			case 0x30: // set MCP23017 output
+				mcp.writeRegister(MCP23017Register::GPIO_A, server.read());
+				mcp.writeRegister(MCP23017Register::GPIO_B, server.read());
 				sendOk();
 				break;
 
