@@ -135,6 +135,12 @@ void loop()
 				color = readColor();
 				pixels.fill(color, offset, length);
 				break;
+			case 0x03: // set multiple
+				offset = readUint16BE();
+				length = readUint16BE();
+				for(uint16_t i = offset; i < offset + length; i++)
+					pixels.setPixelColor(i, readColor());
+				break;
 
 			case 0x10: // set LED count
 				length = readUint16BE();
