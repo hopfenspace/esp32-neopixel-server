@@ -30,7 +30,7 @@ Controlling WS2812 LEDs connected to your ESP32 via UDP.
 ### Set multiple Pixels (0x03)
 - Layout: `0x03 <16-bit offset> <16-bit length> <length times <8-bit red> <8-bit green> <8-bit blue>>`
 - Reponse: None
-- Example: `0x030010001200ff00ff0000` set led 0x10 to green and 0x11 to red
+- Example: `0x030010000200ff00ff0000` set led 0x10 to green and 0x11 to red
 
 ### Set LED Count (0x10)
 - Layout: `0x10 <16-bit length>`
