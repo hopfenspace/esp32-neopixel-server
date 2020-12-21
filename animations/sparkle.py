@@ -5,13 +5,15 @@ import random
 HOST = "10.42.0.222"
 NUM_PIXEL = 300
 
-BASE_COLOR = 0x772200
+BRIGHTNESS = 10
+BASE_COLOR = 0xff7700
 SPARKE_COLOR = 0xffffff
 SPARKLE_COUNT = 5
 
 stripe = ESP32NeopixelServer(HOST)
+baseColor = ESP32NeopixelServer.adjustBrightness(BASE_COLOR, BRIGHTNESS)
 
-stripe.fillRange(0, NUM_PIXEL, BASE_COLOR)
+stripe.fillRange(0, NUM_PIXEL, baseColor)
 while True:
 	sparkles = []
 	for i in range(SPARKLE_COUNT):
@@ -24,7 +26,7 @@ while True:
 	time.sleep(0.2)
 
 	for index in sparkles:
-		stripe.setPixel(index, BASE_COLOR)
+		stripe.setPixel(index, baseColor)
 	stripe.show()
 
 	time.sleep(random.randrange(0, 50) / 50)
