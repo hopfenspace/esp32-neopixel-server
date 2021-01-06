@@ -1,20 +1,14 @@
 #include <WiFi.h>
 #include <Preferences.h>
 #include <Adafruit_NeoPixel.h>
-#include <MCP23017.h>
 
-#define DEFAULT_WS2812_COUNT 512
-#define WS2812_PIN 15
-#define PREFERENCE_WIFI_MODE "wifi-mode" // 0 == AP, 1 == STA
-#define PREFERENCE_WIFI_SSID "wifi-ssid"
-#define PREFERENCE_WIFI_PSK "wifi-psk"
-#define PREFERENCE_LED_COUNT "led-count"
-
-WiFiUDP server;
-Preferences preferences;
-Adafruit_NeoPixel pixels(DEFAULT_WS2812_COUNT, WS2812_PIN, NEO_GRB + NEO_KHZ800);
-TwoWire i2cInstance = TwoWire(0);
-MCP23017 mcp = MCP23017(0x20, i2cInstance);
+//
+// config parameter
+//
+#define WS2812_PINS 15, 17, 18, 21
+#define WS2812_DEFAULT_COUNT 512
+#define DIGITAL_PINS 1, 2, 3, 4, 5, 6
+#define DIGITAL_DEFAULT_STATE LOW
 
 const uint32_t bootColors[] = {
 	0x000000,
@@ -25,14 +19,36 @@ const uint32_t bootColors[] = {
 	0xFF00FF,
 	0x00FFFF,
 };
-#define BOOTCOLORS_COUNT (sizeof(bootColors) / sizeof(uint32_t))
+#define BOOTCOLORS_COUNT (sizeof(bootColors) / sizeof(*bootColors))
+// end config
+
+
+
+
+
+WiFiUDP server;
+
+Adafruit_NeoPixel pixels(WS2812_DEFAULT_COUNT, 1, NEO_GRB + NEO_KHZ800);
+const uint8_t ws2812Pins[] = { WS2812_PINS };
+#define WS2812_PIN_COUNT (sizeof(ws2812Pins) / sizeof(*ws2812Pins))
+
+const uint8_t digitalPins[] = { DIGITAL_PINS };
+#define DIGITAL_PIN_COUNT (sizeof(digitalPins) / sizeof(*digitalPins))
+_Static_assert(DIGITAL_PIN_COUNT <= 16, "Too many digital output pins! Maximum 16 allowed.");
+
+Preferences preferences;
+#define PREFERENCE_WIFI_MODE "wifi-mode" // 0 == AP, 1 == STA
+#define PREFERENCE_WIFI_SSID "wifi-ssid"
+#define PREFERENCE_WIFI_PSK "wifi-psk"
+#define PREFERENCE_LED_COUNT "led-count"
 
 void setup()
 {
+	pixels.setPin(ws2812Pins[0]);
 	pixels.begin();
 
-	uint16_t pixelCount = preferences.getUShort(PREFERENCE_LED_COUNT, DEFAULT_WS2812_COUNT);
-	if(pixelCount != DEFAULT_WS2812_COUNT)
+	uint16_t pixelCount = preferences.getUShort(PREFERENCE_LED_COUNT, WS2812_DEFAULT_COUNT);
+	if(pixelCount != WS2812_DEFAULT_COUNT)
 		pixels.updateLength(pixelCount);
 
 	pixels.clear();
@@ -40,16 +56,11 @@ void setup()
 		pixels.setPixelColor(i, bootColors[i]);
 	pixels.show();
 
-
-	i2cInstance.begin(21, 22, 100000);
-	mcp.init();
-	mcp.portMode(MCP23017Port::A, 0);
-	mcp.portMode(MCP23017Port::B, 0);
-	mcp.writeRegister(MCP23017Register::IPOL_A, 0x00);
-	mcp.writeRegister(MCP23017Register::IPOL_B, 0x00);
-	mcp.writeRegister(MCP23017Register::GPIO_A, 0x00);
-	mcp.writeRegister(MCP23017Register::GPIO_B, 0x00);
-
+	for(int i = 0; i < DIGITAL_PIN_COUNT; i++)
+	{
+		pinMode(digitalPins[i], OUTPUT);
+		digitalWrite(digitalPins[i], DIGITAL_DEFAULT_STATE);
+	}
 
 	preferences.begin("ws2812server", false);
 
@@ -113,13 +124,16 @@ String readString()
 	buff[len] = 0;
 	return String(buff);
 }
-void sendOk()
+void sendLine(const char *msg)
 {
 	server.beginPacket(); // will answer to ip/port last received a packet from
-	server.write('o');
-	server.write('k');
+	server.print(msg);
 	server.write('\n');
 	server.endPacket();
+}
+void sendOk()
+{
+	sendLine("ok");
 }
 
 void loop()
@@ -161,6 +175,16 @@ void loop()
 				preferences.putUShort(PREFERENCE_LED_COUNT, length);
 				sendOk();
 				break;
+			case 0x11: // set LED Pin
+				offset = server.read();
+				if(offset < 0 || offset >= WS2812_PIN_COUNT)
+				{
+					sendLine("error: pin index out of range");
+					break;
+				}
+				pixels.setPin(ws2812Pins[offset]);
+				sendOk();
+				break;
 
 			case 0x20: // set wifi mode
 				preferences.putUChar(PREFERENCE_WIFI_MODE, server.read() ? 0x01 : 0x00);
@@ -175,14 +199,15 @@ void loop()
 				sendOk();
 				break;
 
-			case 0x30: // set MCP23017 output
-				mcp.writeRegister(MCP23017Register::GPIO_A, server.read());
-				mcp.writeRegister(MCP23017Register::GPIO_B, server.read());
+			case 0x30: // set digital output
+				offset = readUint16BE();
+				for(int i = 0; i < DIGITAL_PIN_COUNT; i++)
+					digitalWrite(digitalPins[i], (offset & (1 << i)) ? HIGH : LOW);
 				sendOk();
 				break;
 
 			case 0xff: // reboot
-				sendOk();
+				sendLine("rebooting...");
 				ESP.restart();
 				break;
 		}

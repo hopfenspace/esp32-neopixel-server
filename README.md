@@ -37,6 +37,11 @@ Controlling WS2812 LEDs connected to your ESP32 via UDP.
 - Response: `"ok\n"`
 - Example: `0x10003C` sets LED count to 60
 
+### Select LED Pin (0x11)
+- Layout: `0x10 <8-bit index>`
+- Response: `"ok\n"` or `"error: pin index out of range\n"`
+- Example: `0x1103` selects the third configured WS2812 pin (not GPIO3)
+
 ### Set WiFi Mode (0x20)
 - Layout: `0x20 <either 0x00 for AP or 0x01 for STA>`
 - Response: `"ok\n"`
@@ -52,12 +57,12 @@ Controlling WS2812 LEDs connected to your ESP32 via UDP.
 - Response: `"ok\n"`
 - Example: `"\x21\x09hello1234"` sets WiFi Password to "hello1234"
 
-### Set MCP23017 Output (0x30)
-- Layout: `0x30 <8-bit Port A state> <8-bit Port B state>`
+### Set Digital Output (0x30)
+- Layout: `0x30 <16-bit output state>`
 - Response: `"ok\n"`
-- Example: `30ffff` set all 16 ports to HIGH
+- Example: `30ffff` set all ports to HIGH
 
 ### Reboot (0xff)
 - Layout: `0xff`
-- Response: `"ok\n"`
+- Response: `"rebooting...\n"`
 - Example: `0xff`
