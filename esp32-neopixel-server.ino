@@ -44,12 +44,15 @@ Preferences preferences;
 
 void setup()
 {
+	preferences.begin("ws2812server", false);
+
 	pixels.setPin(ws2812Pins[0]);
-	pixels.begin();
 
 	uint16_t pixelCount = preferences.getUShort(PREFERENCE_LED_COUNT, WS2812_DEFAULT_COUNT);
 	if(pixelCount != WS2812_DEFAULT_COUNT)
 		pixels.updateLength(pixelCount);
+
+	pixels.begin();
 
 	pixels.clear();
 	for(int i = 0; i < BOOTCOLORS_COUNT; i++)
@@ -61,8 +64,6 @@ void setup()
 		pinMode(digitalPins[i], OUTPUT);
 		digitalWrite(digitalPins[i], DIGITAL_DEFAULT_STATE);
 	}
-
-	preferences.begin("ws2812server", false);
 
 	uint8_t wifiMode = preferences.getUChar(PREFERENCE_WIFI_MODE, 0);
 	if(wifiMode == 1)
