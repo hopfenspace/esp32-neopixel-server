@@ -2,9 +2,11 @@
 
 Controlling WS2812 LEDs connected to your ESP32 via UDP.
 
+![demo gif](https://i.m4gnus.de/15aa1b.gif)
+
 ## Notes
 - Setting and Filling pixels are not shown immediately, but after an `Update LEDs` packet.
-- LED count, WiFi mode, WiFi SSID and WiFi Password are be saved in non-volatile memory
+- LED count, WiFi mode, WiFi SSID and WiFi Password are saved in non-volatile memory
 - Set an empty password for open networks
 - When the configured WiFi is not available the device will fall back to AP mode
 - In AP mode the SSID is `NeopixelServer-XXXXXX` with `XXXXXX` being the last 3 byte of the mac address in hex
