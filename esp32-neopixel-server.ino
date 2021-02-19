@@ -153,7 +153,7 @@ void ColorWheel(int startPixel, int endpixel) {
 
 void localRainbow() {
     if (oldstate != local) {// just initialize once
-            ColorWheel(0, pixels.numPixels(), 0, 255);
+            ColorWheel(0, pixels.numPixels());
             pixels.show();
         }
         oldstate = local;
