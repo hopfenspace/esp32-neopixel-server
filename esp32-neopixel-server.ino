@@ -133,8 +133,6 @@ void sendOk() {
 
 bool local = false;
 int localEffectID = 0;
-
-
 unsigned long updateInterval = 1000; // Time to update
 unsigned long lastUpdateTime = 0;
 bool oldstate = false;
@@ -147,25 +145,40 @@ void ColorWheel(int startPixel, int endpixel) {
         pixels.setPixelColor(idx + length / 3, 0, 255 - idx * colorsteps, idx * colorsteps); //area  green to blue
         pixels.setPixelColor(idx + length * 2 / 3, idx * colorsteps, 0, 255 - idx * colorsteps);//area blue to red
     }
-
 }
 
 
 void localRainbow() {
     if (oldstate != local) {// just initialize once
-            ColorWheel(0, pixels.numPixels());
-            pixels.show();
-        }
-        oldstate = local;
-    }
-    if (oldstate == local)){
-        pixels.setPixelColor(0,
-                             pixels.getPixelColor(pixels.numPixels() - 1));// first pixel gets color of the last pixel
-        for (uint16_t idx = pixels.numPixels(); idx > 0; idx--) {
-            pixels.setPixelColor(idx, pixels.getPixelColor(idx - 1);// every pixel gets the color of its predecessor
-        }
+        ColorWheel(0, pixels.numPixels());
         pixels.show();
     }
+    oldstate = local;
+}
+
+if (oldstate == local)){
+pixels.setPixelColor(0,
+pixels.
+getPixelColor(pixels
+.
+
+numPixels()
+
+- 1));// first pixel gets color of the last pixel
+for (
+uint16_t idx = pixels.numPixels();
+idx > 0; idx--) {
+pixels.
+setPixelColor(idx, pixels
+.
+getPixelColor(idx
+- 1);// every pixel gets the color of its predecessor
+}
+pixels.
+
+show();
+
+}
 
 }
 
@@ -182,6 +195,7 @@ void chooseLocalEffect() {
         }
     }
 }
+
 void loop() {
     server.parsePacket();
     while (server.available() > 0) {
