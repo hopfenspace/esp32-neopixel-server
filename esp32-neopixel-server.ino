@@ -233,6 +233,9 @@ void loop()
 				{
 					selectedFallback = fallbackAnimations[offset];
 					fallbackArgument = color;
+
+					inFallbackMode = true;
+					selectedFallback(fallbackArgument, true)
 					sendOk();
 				}
 				break;
