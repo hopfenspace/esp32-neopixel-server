@@ -11,6 +11,9 @@ Controlling WS2812 LEDs connected to your ESP32 via UDP.
 - When the configured WiFi is not available the device will fall back to AP mode
 - In AP mode the SSID is `NeopixelServer-XXXXXX` with `XXXXXX` being the last 3 byte of the mac address in hex
 - In AP mode the Password is empty (open network)
+- After not receiving a packet for 10 seconds the fallback animation will be played
+- After boot the fallback animation will be played
+- The default fallback animation is turning all LEDs off (`01000000`)
 
 ## Packets
 
@@ -43,6 +46,16 @@ Controlling WS2812 LEDs connected to your ESP32 via UDP.
 - Layout: `0x10 <8-bit index>`
 - Response: `"ok\n"` or `"error: pin index out of range\n"`
 - Example: `0x1103` selects the third configured WS2812 pin (not GPIO3)
+
+### Select Fallback Animation (0x12)
+- Layout: `0x12 <8-bit index> <8-bit red> <8-bit green> <8-bit blue>`
+- Response: `"ok\n"` if successfull
+- Example: `0x1202ff0000` in fallback mode, turn all LEDs red
+- The color argument might only be meaningful with some animations
+- Currently implemented Animations:
+    - `0x00` do nothing (just keeps current state)
+    - `0x01` set all LEDs to a constant (given) color
+    - `0x02` rainbow
 
 ### Set WiFi Mode (0x20)
 - Layout: `0x20 <either 0x00 for AP or 0x01 for STA>`

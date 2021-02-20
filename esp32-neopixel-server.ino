@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 #include <WiFi.h>
 #include <Preferences.h>
 #include <Adafruit_NeoPixel.h>
@@ -9,6 +11,7 @@
 #define WS2812_DEFAULT_COUNT 512
 #define DIGITAL_PINS 1, 2, 3, 4, 5, 6
 #define DIGITAL_DEFAULT_STATE LOW
+#define SECONDS_UNTIL_FALLBACK 10
 
 const uint32_t bootColors[] = {
 	0x000000,
@@ -41,6 +44,22 @@ Preferences preferences;
 #define PREFERENCE_WIFI_SSID "wifi-ssid"
 #define PREFERENCE_WIFI_PSK "wifi-psk"
 #define PREFERENCE_LED_COUNT "led-count"
+#define PREFERENCE_FALLBACK_INDEX "fallback-index"
+#define PREFERENCE_FALLBACK_ARGUMENT "fallback-arg"
+
+typedef void (*fallbackAnimation)(uint32_t arg, bool firstTime);
+fallbackAnimation selectedFallback = NULL;
+uint32_t fallbackArgument = 0;
+
+void doNothingAnimation(uint32_t, bool);
+void constColorAnimation(uint32_t, bool);
+void rainbowAnimation(uint32_t, bool);
+fallbackAnimation fallbackAnimations[] = {
+	doNothingAnimation,
+	constColorAnimation,
+	rainbowAnimation,
+};
+#define FALLBACK_ANIMATION_COUNT (sizeof(fallbackAnimations) / sizeof(fallbackAnimation))
 
 void setup()
 {
@@ -102,6 +121,11 @@ void setup()
 	}
 
 	server.begin(1337);
+
+	uint8_t index = preferences.getUChar(PREFERENCE_FALLBACK_INDEX, 1);
+	fallbackArgument = preferences.getULong(PREFERENCE_FALLBACK_ARGUMENT, 0);
+	selectedFallback = fallbackAnimations[index];
+	selectedFallback(fallbackArgument, true);
 }
 
 uint16_t readUint16BE()
@@ -139,9 +163,25 @@ void sendOk()
 
 void loop()
 {
+	static uint32_t lastPacket = 0;
+	static bool inFallbackMode = true;
+
+	if(inFallbackMode)
+		selectedFallback(fallbackArgument, false);
+
+	uint32_t now = millis();
+	if(!inFallbackMode && selectedFallback && now - lastPacket > SECONDS_UNTIL_FALLBACK * 1000)
+	{
+		inFallbackMode = true;
+		selectedFallback(fallbackArgument, true);
+	}
+
 	server.parsePacket();
 	while(server.available() > 0)
 	{
+		lastPacket = now;
+		inFallbackMode = false;
+
 		uint8_t packetType = server.read();
 		uint32_t color;
 		uint16_t offset;
@@ -186,6 +226,16 @@ void loop()
 				pixels.setPin(ws2812Pins[offset]);
 				sendOk();
 				break;
+			case 0x12: // set fallback animation
+				offset = server.read();
+				color = readColor();
+				if(offset >= 0 && offset < FALLBACK_ANIMATION_COUNT)
+				{
+					selectedFallback = fallbackAnimations[offset];
+					fallbackArgument = color;
+					sendOk();
+				}
+				break;
 
 			case 0x20: // set wifi mode
 				preferences.putUChar(PREFERENCE_WIFI_MODE, server.read() ? 0x01 : 0x00);
@@ -215,4 +265,42 @@ void loop()
 	}
 
 	delay(5);
+}
+
+void doNothingAnimation(uint32_t arg, bool firstTime)
+{
+}
+void constColorAnimation(uint32_t arg, bool firstTime)
+{
+	if(firstTime)
+	{
+		pixels.fill(arg, 0, pixels.numPixels());
+		pixels.show();
+	}
+}
+void rainbowAnimation(uint32_t arg, bool firstTime)
+{
+	if(firstTime)
+	{
+		uint32_t length = pixels.numPixels();
+		double colorsteps = 255 / (length / 3);
+		for (int idx = 0; idx < length / 3; idx++)
+		{
+			pixels.setPixelColor(idx, 255 - idx * colorsteps, idx * colorsteps, 0);//area red to green
+			pixels.setPixelColor(idx + length / 3, 0, 255 - idx * colorsteps, idx * colorsteps); //area  green to blue
+			pixels.setPixelColor(idx + length * 2 / 3, idx * colorsteps, 0, 255 - idx * colorsteps);//area blue to red
+		}
+	}
+	else
+	{
+		// first pixel gets color of the last pixel
+		pixels.setPixelColor(0, pixels.getPixelColor(pixels.numPixels() - 1));
+		for (uint16_t idx = pixels.numPixels(); idx > 0; idx--)
+		{
+			// every pixel gets the color of its predecessor
+			pixels.setPixelColor(idx, pixels.getPixelColor(idx - 1));
+		}
+	}
+
+	pixels.show();
 }
