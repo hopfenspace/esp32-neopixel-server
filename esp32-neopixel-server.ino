@@ -285,7 +285,7 @@ void rainbowAnimation(uint32_t arg, bool firstTime)
 {
 	if(firstTime)
 	{
-		uint32_t length = pixels.numPixels();
+		uint16_t  length = pixels.numPixels();
 		double colorsteps = 255 / (length / 3);
 		for (int idx = 0; idx < length / 3; idx++)
 		{
@@ -306,4 +306,22 @@ void rainbowAnimation(uint32_t arg, bool firstTime)
 	}
 
 	pixels.show();
+}
+
+int position=0;
+void tailAnimation(uint32_t color, uint32_t size, bool firstTime){
+	if (position>=pixels.numPixels){// reset at end of stripe
+		firstTime=true;
+		position=0;
+	}
+	if (firstTime){
+	for(int i =0;idx<size;idx++){//initializing the stripe
+		pixels.setPixelColor(i,color);
+	}
+	}else{
+		pixels.setPixelColor(position,0,0,0);//switchoff first led of the tail
+		pixels.setPixelColor(position+size,color);// switch on led behind tail
+		position++;
+	}
+	
 }
