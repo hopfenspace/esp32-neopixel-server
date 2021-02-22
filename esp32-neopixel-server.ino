@@ -25,17 +25,13 @@ const uint32_t bootColors[] = {
 #define BOOTCOLORS_COUNT (sizeof(bootColors) / sizeof(*bootColors))
 // end config
 
-
-
-
-
 WiFiUDP server;
 
 Adafruit_NeoPixel pixels(WS2812_DEFAULT_COUNT, 1, NEO_GRB + NEO_KHZ800);
-const uint8_t ws2812Pins[] = { WS2812_PINS };
+const uint8_t ws2812Pins[] = {WS2812_PINS};
 #define WS2812_PIN_COUNT (sizeof(ws2812Pins) / sizeof(*ws2812Pins))
 
-const uint8_t digitalPins[] = { DIGITAL_PINS };
+const uint8_t digitalPins[] = {DIGITAL_PINS};
 #define DIGITAL_PIN_COUNT (sizeof(digitalPins) / sizeof(*digitalPins))
 _Static_assert(DIGITAL_PIN_COUNT <= 16, "Too many digital output pins! Maximum 16 allowed.");
 
@@ -72,41 +68,41 @@ void setup()
 	pixels.setPin(ws2812Pins[0]);
 
 	uint16_t pixelCount = preferences.getUShort(PREFERENCE_LED_COUNT, WS2812_DEFAULT_COUNT);
-	if(pixelCount != WS2812_DEFAULT_COUNT)
+	if (pixelCount != WS2812_DEFAULT_COUNT)
 		pixels.updateLength(pixelCount);
 
 	pixels.begin();
 
 	pixels.clear();
-	for(int i = 0; i < BOOTCOLORS_COUNT; i++)
+	for (int i = 0; i < BOOTCOLORS_COUNT; i++)
 		pixels.setPixelColor(i, bootColors[i]);
 	pixels.show();
 
-	for(int i = 0; i < DIGITAL_PIN_COUNT; i++)
+	for (int i = 0; i < DIGITAL_PIN_COUNT; i++)
 	{
 		pinMode(digitalPins[i], OUTPUT);
 		digitalWrite(digitalPins[i], DIGITAL_DEFAULT_STATE);
 	}
 
 	uint8_t wifiMode = preferences.getUChar(PREFERENCE_WIFI_MODE, 0);
-	if(wifiMode == 1)
+	if (wifiMode == 1)
 	{
 		String ssid = preferences.getString(PREFERENCE_WIFI_SSID, "DefaultWiFi");
 		String password = preferences.getString(PREFERENCE_WIFI_PSK, "");
 		const char *pw;
-		if(password == "")
+		if (password == "")
 			pw = NULL;
 		else
 			pw = password.c_str();
 
 		WiFi.begin(ssid.c_str(), pw);
 
-		for(int i = 0; i < 100; i++)
+		for (int i = 0; i < 100; i++)
 		{
-			if(WiFi.status() == WL_CONNECTED)
+			if (WiFi.status() == WL_CONNECTED)
 				break;
 
-			for(int j = 0; j < BOOTCOLORS_COUNT; j++)
+			for (int j = 0; j < BOOTCOLORS_COUNT; j++)
 				pixels.setPixelColor(j, bootColors[(i + j) % BOOTCOLORS_COUNT]);
 			pixels.show();
 
@@ -114,7 +110,7 @@ void setup()
 		}
 	}
 
-	if(wifiMode == 0 || WiFi.status() != WL_CONNECTED)
+	if (wifiMode == 0 || WiFi.status() != WL_CONNECTED)
 	{
 		uint32_t mac = ESP.getEfuseMac() >> 24;
 		char apSsid[64];
@@ -147,7 +143,7 @@ String readString()
 {
 	char buff[256];
 	uint8_t len = server.read();
-	for(int i = 0; i < len; i++)
+	for (int i = 0; i < len; i++)
 		buff[i] = server.read();
 
 	buff[len] = 0;
@@ -170,18 +166,18 @@ void loop()
 	static uint32_t lastPacket = 0;
 	static bool inFallbackMode = true;
 
-	if(inFallbackMode)
+	if (inFallbackMode)
 		selectedFallback(fallbackArgs, fallbackArgLen, false);
 
 	uint32_t now = millis();
-	if(!inFallbackMode && selectedFallback && now - lastPacket > SECONDS_UNTIL_FALLBACK * 1000)
+	if (!inFallbackMode && selectedFallback && now - lastPacket > SECONDS_UNTIL_FALLBACK * 1000)
 	{
 		inFallbackMode = true;
 		selectedFallback(fallbackArgs, fallbackArgLen, true);
 	}
 
 	server.parsePacket();
-	while(server.available() > 0)
+	while (server.available() > 0)
 	{
 		lastPacket = now;
 		inFallbackMode = false;
@@ -190,89 +186,89 @@ void loop()
 		uint32_t color;
 		uint16_t offset;
 		uint16_t length;
-		switch(packetType)
+		switch (packetType)
 		{
-			case 0x00: // update
-				pixels.show();
-				sendOk();
-				break;
-			case 0x01: // set pixel color
-				offset = readUint16BE();
-				color = readColor();
-				pixels.setPixelColor(offset, color);
-				break;
-			case 0x02: // fill pixel range
-				offset = readUint16BE();
-				length = readUint16BE();
-				color = readColor();
-				pixels.fill(color, offset, length);
-				break;
-			case 0x03: // set multiple
-				offset = readUint16BE();
-				length = readUint16BE();
-				for(uint16_t i = offset; i < offset + length; i++)
-					pixels.setPixelColor(i, readColor());
-				break;
+		case 0x00: // update
+			pixels.show();
+			sendOk();
+			break;
+		case 0x01: // set pixel color
+			offset = readUint16BE();
+			color = readColor();
+			pixels.setPixelColor(offset, color);
+			break;
+		case 0x02: // fill pixel range
+			offset = readUint16BE();
+			length = readUint16BE();
+			color = readColor();
+			pixels.fill(color, offset, length);
+			break;
+		case 0x03: // set multiple
+			offset = readUint16BE();
+			length = readUint16BE();
+			for (uint16_t i = offset; i < offset + length; i++)
+				pixels.setPixelColor(i, readColor());
+			break;
 
-			case 0x10: // set LED count
-				length = readUint16BE();
-				pixels.updateLength(length);
-				preferences.putUShort(PREFERENCE_LED_COUNT, length);
-				sendOk();
+		case 0x10: // set LED count
+			length = readUint16BE();
+			pixels.updateLength(length);
+			preferences.putUShort(PREFERENCE_LED_COUNT, length);
+			sendOk();
+			break;
+		case 0x11: // set LED Pin
+			offset = server.read();
+			if (offset < 0 || offset >= WS2812_PIN_COUNT)
+			{
+				sendLine("error: pin index out of range");
 				break;
-			case 0x11: // set LED Pin
-				offset = server.read();
-				if(offset < 0 || offset >= WS2812_PIN_COUNT)
-				{
-					sendLine("error: pin index out of range");
-					break;
-				}
-				pixels.setPin(ws2812Pins[offset]);
-				sendOk();
-				break;
-			case 0x12: // set fallback animation
-				offset = server.read();
-				length = server.read();
-				if(offset >= 0 && offset < FALLBACK_ANIMATION_COUNT && length <= 256)
-				{
-					selectedFallback = fallbackAnimations[offset];
-					fallbackArgLen = length;
-					for(int i = 0; i < length; i++)
-						fallbackArgs[i] = server.read();
+			}
+			pixels.setPin(ws2812Pins[offset]);
+			sendOk();
+			break;
+		case 0x12: // set fallback animation
+			offset = server.read();
+			length = server.read();
+			if (offset >= 0 && offset < FALLBACK_ANIMATION_COUNT && length <= 256)
+			{
+				selectedFallback = fallbackAnimations[offset];
+				fallbackArgLen = length;
+				for (int i = 0; i < length; i++)
+					fallbackArgs[i] = server.read();
 
-					preferences.putUShort(PREFERENCE_FALLBACK_INDEX, offset);
-					preferences.putBytes(PREFERENCE_FALLBACK_ARGUMENT, fallbackArgs, length);
+				preferences.putUShort(PREFERENCE_FALLBACK_INDEX, offset);
+				preferences.putBytes(PREFERENCE_FALLBACK_ARGUMENT, fallbackArgs, length);
 
-					inFallbackMode = true;
-					selectedFallback(fallbackArgs, fallbackArgLen, true);
-					sendOk();
-				}
-				break;
+				inFallbackMode = true;
+				selectedFallback(fallbackArgs, fallbackArgLen, true);
+				sendOk();
+			}
+			break;
 
-			case 0x20: // set wifi mode
-				preferences.putUChar(PREFERENCE_WIFI_MODE, server.read() ? 0x01 : 0x00);
-				sendOk();
-				break;
-			case 0x21: // set wifi ssid
-				preferences.putString(PREFERENCE_WIFI_SSID, readString());
-				sendOk();
-				break;
-			case 0x22: // set wifi password
-				preferences.putString(PREFERENCE_WIFI_PSK, readString());
-				sendOk();
-				break;
+		case 0x20: // set wifi mode
+			preferences.putUChar(PREFERENCE_WIFI_MODE, server.read() ? 0x01 : 0x00);
+			sendOk();
+			break;
+		case 0x21: // set wifi ssid
+			preferences.putString(PREFERENCE_WIFI_SSID, readString());
+			sendOk();
+			break;
+		case 0x22: // set wifi password
+			preferences.putString(PREFERENCE_WIFI_PSK, readString());
+			sendOk();
+			break;
 
-			case 0x30: // set digital output
-				offset = readUint16BE();
-				for(int i = 0; i < DIGITAL_PIN_COUNT; i++)
-					digitalWrite(digitalPins[i], (offset & (1 << i)) ? HIGH : LOW);
-				sendOk();
-				break;
+		case 0x30: // set digital output
+			offset = readUint16BE();
+			for (int i = 0; i < DIGITAL_PIN_COUNT; i++)
+				digitalWrite(digitalPins[i], (offset & (1 << i)) ? HIGH : LOW);
+			sendOk();
+			break;
 
-			case 0xff: // reboot
-				sendLine("rebooting...");
-				ESP.restart();
-				break;
+		case 0xff: // reboot
+			sendLine("rebooting...");
+			ESP.restart();
+			break;
 		}
 	}
 
@@ -284,10 +280,10 @@ void doNothingAnimation(uint8_t *args, size_t argLen, bool firstTime)
 }
 void constColorAnimation(uint8_t *args, size_t argLen, bool firstTime)
 {
-	if(firstTime)
+	if (firstTime)
 	{
 		uint32_t color = 0;
-		if(argLen == 3)
+		if (argLen == 3)
 			color = Adafruit_NeoPixel::Color(args[0], args[1], args[2]);
 
 		pixels.fill(color, 0, pixels.numPixels());
@@ -296,16 +292,16 @@ void constColorAnimation(uint8_t *args, size_t argLen, bool firstTime)
 }
 void rainbowAnimation(uint8_t *args, size_t argLen, bool firstTime)
 {
-	if(firstTime)
+	if (firstTime)
 	{
-		uint16_t  length = pixels.numPixels();
-		pixels.fill(0,0,length-1);//stripe reset
+		uint16_t length = pixels.numPixels();
+		pixels.fill(0, 0, length - 1); //stripe reset
 		double colorsteps = 255 / (length / 3);
 		for (int idx = 0; idx < length / 3; idx++)
 		{
-			pixels.setPixelColor(idx, 255 - idx * colorsteps, idx * colorsteps, 0);//area red to green
-			pixels.setPixelColor(idx + length / 3, 0, 255 - idx * colorsteps, idx * colorsteps); //area  green to blue
-			pixels.setPixelColor(idx + length * 2 / 3, idx * colorsteps, 0, 255 - idx * colorsteps);//area blue to red
+			pixels.setPixelColor(idx, 255 - idx * colorsteps, idx * colorsteps, 0);					 //area red to green
+			pixels.setPixelColor(idx + length / 3, 0, 255 - idx * colorsteps, idx * colorsteps);	 //area  green to blue
+			pixels.setPixelColor(idx + length * 2 / 3, idx * colorsteps, 0, 255 - idx * colorsteps); //area blue to red
 		}
 	}
 	else
@@ -322,45 +318,52 @@ void rainbowAnimation(uint8_t *args, size_t argLen, bool firstTime)
 	pixels.show();
 }
 
-int position=0;
-void tailAnimation(uint8_t *args, size_t argLen, bool firstTime){
-	if(argLen != 5)
+int position = 0;
+void tailAnimation(uint8_t *args, size_t argLen, bool firstTime)
+{
+	if (argLen != 5)
 		return;
 	uint32_t color = Adafruit_NeoPixel::Color(args[0], args[1], args[2]);
 	uint16_t size = (args[3] << 8) | args[4];
 
-	if (position>=pixels.numPixels()){// reset at end of stripe
-		firstTime=true;
-		position=0;
+	if (position >= pixels.numPixels())
+	{ // reset at end of stripe
+		firstTime = true;
+		position = 0;
 	}
-	if (firstTime){
-			pixels.fill(0,0,pixels.numPixels()-1);//stripe reset
-	for(int i = 0; i < size; i++){//initializing the stripe
-		pixels.setPixelColor(i,color);
+	if (firstTime)
+	{
+		pixels.fill(0, 0, pixels.numPixels() - 1); //stripe reset
+		for (int i = 0; i < size; i++)
+		{ //initializing the stripe
+			pixels.setPixelColor(i, color);
+		}
 	}
-	}else{
-		pixels.setPixelColor(position,0,0,0);//switchoff first led of the tail
-		pixels.setPixelColor(position+size,color);// switch on led behind tail
+	else
+	{
+		pixels.setPixelColor(position, 0, 0, 0);	  //switchoff first led of the tail
+		pixels.setPixelColor(position + size, color); // switch on led behind tail
 		position++;
 	}
-	
 }
-void sparcleAnimation(uint8_t *args, size_t argLen, bool firstTime){
-	if(argLen != 3)
+void sparcleAnimation(uint8_t *args, size_t argLen, bool firstTime)
+{
+	if (argLen != 3)
 		return;
 	uint32_t color = Adafruit_NeoPixel::Color(args[0], args[1], args[2]);
 
-	int on=random(0,pixels.numPixels());
-	int off=random(0,pixels.numPixels());
-	pixels.setPixelColor(on, color);// defined color random position
+	int on = random(0, pixels.numPixels());
+	int off = random(0, pixels.numPixels());
+	pixels.setPixelColor(on, color); // defined color random position
 	pixels.setPixelColor(off, 0);
 }
-void randomSparcleAnimation(uint8_t *args, size_t argLen, bool firstTime){
-	int on=random(0,pixels.numPixels());
-	int red= random(0,256);
-	int blue=random(0,256);
-	int green= random(0,256);
-	pixels.setPixelColor(on,red,blue,green);// random color + random position
-	int off=random(0,pixels.numPixels());
+void randomSparcleAnimation(uint8_t *args, size_t argLen, bool firstTime)
+{
+	int on = random(0, pixels.numPixels());
+	int red = random(0, 256);
+	int blue = random(0, 256);
+	int green = random(0, 256);
+	pixels.setPixelColor(on, red, blue, green); // random color + random position
+	int off = random(0, pixels.numPixels());
 	pixels.setPixelColor(off, 0);
 }
