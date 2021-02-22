@@ -318,9 +318,9 @@ void rainbowAnimation(uint8_t *args, size_t argLen, bool firstTime)
 	pixels.show();
 }
 
-int position = 0;
 void tailAnimation(uint8_t *args, size_t argLen, bool firstTime)
 {
+	static int position = 0;
 	if (argLen != 5)
 		return;
 	uint32_t color = Adafruit_NeoPixel::Color(args[0], args[1], args[2]);
@@ -366,4 +366,35 @@ void randomSparcleAnimation(uint8_t *args, size_t argLen, bool firstTime)
 	pixels.setPixelColor(on, red, blue, green); // random color + random position
 	int off = random(0, pixels.numPixels());
 	pixels.setPixelColor(off, 0);
+}
+
+void clockAnimation(uint8_t *args, size_t argLen, bool firstTime)
+{
+	static int counter = 0;
+	static int position = 0;
+	if (firstTime)
+	{
+		position = pixels.numPixels() - 1;
+	}
+	if (counter >= pixels.numPixels())
+	{
+		counter = 0;
+		pixels.fill(0, 0, pixels.numPixels() - 1);
+	}
+	if (argLen == 3)
+	{
+		uint32_t color = Adafruit_NeoPixel::Color(args[0], args[1], args[2]);
+		if (position >= counter)
+		{
+			pixels.setPixelColor(position, color);
+			pixels.setPixelColor(position + 1, 0);
+			position--;
+		}
+		else
+		{
+			pixels.setPixelColor(counter, color);
+			counter++;
+			position = pixels.numPixels() - 1;
+		}
+	}
 }
