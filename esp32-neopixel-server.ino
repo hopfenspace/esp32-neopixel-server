@@ -286,6 +286,7 @@ void rainbowAnimation(uint32_t arg, bool firstTime)
 	if(firstTime)
 	{
 		uint16_t  length = pixels.numPixels();
+		pixels.fill(0,0,length-1);//stripe reset
 		double colorsteps = 255 / (length / 3);
 		for (int idx = 0; idx < length / 3; idx++)
 		{
@@ -310,11 +311,12 @@ void rainbowAnimation(uint32_t arg, bool firstTime)
 
 int position=0;
 void tailAnimation(uint32_t color, uint32_t size, bool firstTime){
-	if (position>=pixels.numPixels){// reset at end of stripe
+	if (position>=pixels.numPixels()){// reset at end of stripe
 		firstTime=true;
 		position=0;
 	}
 	if (firstTime){
+			pixels.fill(0,0,pixels.numPixels()-1);//stripe reset
 	for(int i =0;idx<size;idx++){//initializing the stripe
 		pixels.setPixelColor(i,color);
 	}
@@ -324,4 +326,19 @@ void tailAnimation(uint32_t color, uint32_t size, bool firstTime){
 		position++;
 	}
 	
+}
+void sparcleAnimation(uint32_t color, bool firstTime){
+	int on=random(0,pixels.numPixels());
+	int off=random(0,pixels.numPixels());
+	pixels.setPixelColor(on, color);// defined color random position
+	pixels.setPixelColor(off, 0);
+}
+void randomSparcleAnimation(uint32_t arg, bool firstTime){
+	int on=random(0,pixels.numPixels());
+	int red= random(0,256);
+	int blue=random(0,256);
+	int green= random(0,256);
+	pixels.setPixelColor(on,red,blue,green);// random color + random position
+	int off=random(0,pixels.numPixels());
+	pixels.setPixelColor(off, 0);
 }
