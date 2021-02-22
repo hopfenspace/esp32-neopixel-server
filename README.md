@@ -48,14 +48,10 @@ Controlling WS2812 LEDs connected to your ESP32 via UDP.
 - Example: `0x1103` selects the third configured WS2812 pin (not GPIO3)
 
 ### Select Fallback Animation (0x12)
-- Layout: `0x12 <8-bit index> <8-bit red> <8-bit green> <8-bit blue>`
+- Layout: `0x12 <8-bit index> <8-bit length> <length * 8-bit argument bytes>`
 - Response: `"ok\n"` if successfull
-- Example: `0x1202ff0000` in fallback mode, turn all LEDs red
-- The color argument might only be meaningful with some animations
-- Currently implemented Animations:
-    - `0x00` do nothing (just keeps current state)
-    - `0x01` set all LEDs to a constant (given) color
-    - `0x02` rainbow
+- Example: `0x120203ff0000` in fallback mode, turn all LEDs red
+- See below for a list of all animations and their arguments
 
 ### Set WiFi Mode (0x20)
 - Layout: `0x20 <either 0x00 for AP or 0x01 for STA>`
@@ -81,3 +77,7 @@ Controlling WS2812 LEDs connected to your ESP32 via UDP.
 - Layout: `0xff`
 - Response: `"rebooting...\n"`
 - Example: `0xff`
+
+## Fallback Animations
+TODO proper documentation!
+For now check the `fallbackAnimations` array in [the source code](esp32-neopixel-server.ino)

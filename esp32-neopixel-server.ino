@@ -47,17 +47,21 @@ Preferences preferences;
 #define PREFERENCE_FALLBACK_INDEX "fallback-index"
 #define PREFERENCE_FALLBACK_ARGUMENT "fallback-arg"
 
-typedef void (*fallbackAnimation)(uint32_t arg, bool firstTime);
+typedef void (*fallbackAnimation)(uint8_t *arg, size_t argLen, bool firstTime);
 fallbackAnimation selectedFallback = NULL;
-uint32_t fallbackArgument = 0;
+uint8_t fallbackArgLen = 0;
+uint8_t fallbackArgs[256];
 
-void doNothingAnimation(uint32_t, bool);
-void constColorAnimation(uint32_t, bool);
-void rainbowAnimation(uint32_t, bool);
+void doNothingAnimation(uint8_t *, size_t, bool);
+void constColorAnimation(uint8_t *, size_t, bool);
+void rainbowAnimation(uint8_t *, size_t, bool);
 fallbackAnimation fallbackAnimations[] = {
 	doNothingAnimation,
 	constColorAnimation,
 	rainbowAnimation,
+	tailAnimation,
+	sparcleAnimation,
+	randomSparcleAnimation,
 };
 #define FALLBACK_ANIMATION_COUNT (sizeof(fallbackAnimations) / sizeof(fallbackAnimation))
 
@@ -123,9 +127,9 @@ void setup()
 	server.begin(1337);
 
 	uint8_t index = preferences.getUChar(PREFERENCE_FALLBACK_INDEX, 1);
-	fallbackArgument = preferences.getULong(PREFERENCE_FALLBACK_ARGUMENT, 0);
+	fallbackArgLen = preferences.getBytes(PREFERENCE_FALLBACK_ARGUMENT, fallbackArgs, 256);
 	selectedFallback = fallbackAnimations[index];
-	selectedFallback(fallbackArgument, true);
+	selectedFallback(fallbackArgs, fallbackArgLen, true);
 }
 
 uint16_t readUint16BE()
@@ -167,13 +171,13 @@ void loop()
 	static bool inFallbackMode = true;
 
 	if(inFallbackMode)
-		selectedFallback(fallbackArgument, false);
+		selectedFallback(fallbackArgs, fallbackArgLen, false);
 
 	uint32_t now = millis();
 	if(!inFallbackMode && selectedFallback && now - lastPacket > SECONDS_UNTIL_FALLBACK * 1000)
 	{
 		inFallbackMode = true;
-		selectedFallback(fallbackArgument, true);
+		selectedFallback(fallbackArgs, fallbackArgLen, true);
 	}
 
 	server.parsePacket();
@@ -228,16 +232,19 @@ void loop()
 				break;
 			case 0x12: // set fallback animation
 				offset = server.read();
-				color = readColor();
-				if(offset >= 0 && offset < FALLBACK_ANIMATION_COUNT)
+				length = server.read();
+				if(offset >= 0 && offset < FALLBACK_ANIMATION_COUNT && length <= 256)
 				{
-					preferences.putUShort(PREFERENCE_FALLBACK_INDEX, offset);
-					preferences.putUShort(PREFERENCE_FALLBACK_ARGUMENT, color);
 					selectedFallback = fallbackAnimations[offset];
-					fallbackArgument = color;
+					fallbackArgLen = length;
+					for(int i = 0; i < length; i++)
+						fallbackArgs[i] = server.read();
+
+					preferences.putUShort(PREFERENCE_FALLBACK_INDEX, offset);
+					preferences.putBytes(PREFERENCE_FALLBACK_ARGUMENT, fallbackArgs, length);
 
 					inFallbackMode = true;
-					selectedFallback(fallbackArgument, true);
+					selectedFallback(fallbackArgs, fallbackArgLen, true);
 					sendOk();
 				}
 				break;
@@ -272,18 +279,22 @@ void loop()
 	delay(5);
 }
 
-void doNothingAnimation(uint32_t arg, bool firstTime)
+void doNothingAnimation(uint8_t *args, size_t argLen, bool firstTime)
 {
 }
-void constColorAnimation(uint32_t arg, bool firstTime)
+void constColorAnimation(uint8_t *args, size_t argLen, bool firstTime)
 {
 	if(firstTime)
 	{
-		pixels.fill(arg, 0, pixels.numPixels());
+		uint32_t color = 0;
+		if(argLen == 3)
+			color = Adafruit_NeoPixel::Color(args[0], args[1], args[2]);
+
+		pixels.fill(color, 0, pixels.numPixels());
 		pixels.show();
 	}
 }
-void rainbowAnimation(uint32_t arg, bool firstTime)
+void rainbowAnimation(uint8_t *args, size_t argLen, bool firstTime)
 {
 	if(firstTime)
 	{
@@ -312,14 +323,19 @@ void rainbowAnimation(uint32_t arg, bool firstTime)
 }
 
 int position=0;
-void tailAnimation(uint32_t color, uint32_t size, bool firstTime){
+void tailAnimation(uint8_t *args, size_t argLen, bool firstTime){
+	if(argLen != 5)
+		return;
+	uint32_t color = Adafruit_NeoPixel::Color(args[0], args[1], args[2]);
+	uint16_t size = (args[3] << 8) | args[4];
+
 	if (position>=pixels.numPixels()){// reset at end of stripe
 		firstTime=true;
 		position=0;
 	}
 	if (firstTime){
 			pixels.fill(0,0,pixels.numPixels()-1);//stripe reset
-	for(int i =0;idx<size;idx++){//initializing the stripe
+	for(int i = 0; i < size; i++){//initializing the stripe
 		pixels.setPixelColor(i,color);
 	}
 	}else{
@@ -329,13 +345,17 @@ void tailAnimation(uint32_t color, uint32_t size, bool firstTime){
 	}
 	
 }
-void sparcleAnimation(uint32_t color, bool firstTime){
+void sparcleAnimation(uint8_t *args, size_t argLen, bool firstTime){
+	if(argLen != 3)
+		return;
+	uint32_t color = Adafruit_NeoPixel::Color(args[0], args[1], args[2]);
+
 	int on=random(0,pixels.numPixels());
 	int off=random(0,pixels.numPixels());
 	pixels.setPixelColor(on, color);// defined color random position
 	pixels.setPixelColor(off, 0);
 }
-void randomSparcleAnimation(uint32_t arg, bool firstTime){
+void randomSparcleAnimation(uint8_t *args, size_t argLen, bool firstTime){
 	int on=random(0,pixels.numPixels());
 	int red= random(0,256);
 	int blue=random(0,256);
