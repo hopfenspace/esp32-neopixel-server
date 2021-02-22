@@ -231,11 +231,13 @@ void loop()
 				color = readColor();
 				if(offset >= 0 && offset < FALLBACK_ANIMATION_COUNT)
 				{
+					preferences.putUShort(PREFERENCE_FALLBACK_INDEX, offset);
+					preferences.putUShort(PREFERENCE_FALLBACK_ARGUMENT, color);
 					selectedFallback = fallbackAnimations[offset];
 					fallbackArgument = color;
 
 					inFallbackMode = true;
-					selectedFallback(fallbackArgument, true)
+					selectedFallback(fallbackArgument, true);
 					sendOk();
 				}
 				break;
