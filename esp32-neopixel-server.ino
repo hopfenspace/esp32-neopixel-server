@@ -1,5 +1,4 @@
 #include <stdint.h>
-
 #include <WiFi.h>
 #include <Preferences.h>
 #include <Adafruit_NeoPixel.h>
@@ -290,19 +289,24 @@ void constColorAnimation(uint8_t *args, size_t argLen, bool firstTime)
 		pixels.show();
 	}
 }
+void colorWheel(int firstPixel, int lastPixel, int stripeSize)
+{
+
+	double colorsteps = 255 / (stripeSize / 3);
+	for (int idx = 0; idx < stripeSize / 3; idx++)
+	{
+		pixels.setPixelColor(idx, 255 - idx * colorsteps, idx * colorsteps, 0);						 //area red to green
+		pixels.setPixelColor(idx + stripeSize / 3, 0, 255 - idx * colorsteps, idx * colorsteps);	 //area  green to blue
+		pixels.setPixelColor(idx + stripeSize * 2 / 3, idx * colorsteps, 0, 255 - idx * colorsteps); //area blue to red
+	}
+}
 void rainbowAnimation(uint8_t *args, size_t argLen, bool firstTime)
 {
 	if (firstTime)
 	{
 		uint16_t length = pixels.numPixels();
 		pixels.fill(0, 0, length - 1); //stripe reset
-		double colorsteps = 255 / (length / 3);
-		for (int idx = 0; idx < length / 3; idx++)
-		{
-			pixels.setPixelColor(idx, 255 - idx * colorsteps, idx * colorsteps, 0);					 //area red to green
-			pixels.setPixelColor(idx + length / 3, 0, 255 - idx * colorsteps, idx * colorsteps);	 //area  green to blue
-			pixels.setPixelColor(idx + length * 2 / 3, idx * colorsteps, 0, 255 - idx * colorsteps); //area blue to red
-		}
+		colorWheel(0, length - 1, length);
 	}
 	else
 	{
@@ -345,7 +349,9 @@ void tailAnimation(uint8_t *args, size_t argLen, bool firstTime)
 		pixels.setPixelColor(position + size, color); // switch on led behind tail
 		position++;
 	}
+	pixels.show();
 }
+
 void sparcleAnimation(uint8_t *args, size_t argLen, bool firstTime)
 {
 	if (argLen != 3)
@@ -357,6 +363,7 @@ void sparcleAnimation(uint8_t *args, size_t argLen, bool firstTime)
 	pixels.setPixelColor(on, color); // defined color random position
 	pixels.setPixelColor(off, 0);
 }
+
 void randomSparcleAnimation(uint8_t *args, size_t argLen, bool firstTime)
 {
 	int on = random(0, pixels.numPixels());
@@ -366,6 +373,7 @@ void randomSparcleAnimation(uint8_t *args, size_t argLen, bool firstTime)
 	pixels.setPixelColor(on, red, blue, green); // random color + random position
 	int off = random(0, pixels.numPixels());
 	pixels.setPixelColor(off, 0);
+	pixels.show();
 }
 
 void clockAnimation(uint8_t *args, size_t argLen, bool firstTime)
@@ -396,5 +404,37 @@ void clockAnimation(uint8_t *args, size_t argLen, bool firstTime)
 			counter++;
 			position = pixels.numPixels() - 1;
 		}
+	}
+	pixels.show();
+}
+void swapAnimation(uint8_t *args, size_t argLen, bool firstTime)
+{
+	if (argLen == 4)
+	{
+		uint32_t color = Adafruit_NeoPixel::Color(args[0], args[1], args[2]);
+		int middle = (pixels.numPixels() - 1) / 2;						   //middle of stripe
+		static int counter = 0;											   // counts function calling
+		uint8_t wave = args[3];											   // amount of "waves until reset"
+		static int milestones = 1;										   // how many resetwaves were performed
+		int border = (((pixels.numPixels() - 1) / 2) / wave) * milestones; // border for next blinkiblinki
+		if (firstTime)
+		{
+			counter = 0;
+			milestones = 1;
+		}
+		if (counter >= border) // reset counter when it hits the border and increases the bordersize
+		{
+			pixels.fill(color, 0, pixels.numPixels() - 1); // reset stripe
+			counter = 0;
+			milestones++;
+		}
+		if (milestones > wave) // reset the milestones when they are more than the waves
+		{
+			milestones = 1;
+		}
+		pixels.setPixelColor(middle + counter, color); // colourrizes the pixels left and right from middle
+		pixels.setPixelColor(middle - counter, color);
+		counter++;
+		pixels.show();
 	}
 }
