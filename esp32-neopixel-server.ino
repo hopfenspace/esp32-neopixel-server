@@ -57,6 +57,8 @@ fallbackAnimation fallbackAnimations[] = {
 	tailAnimation,
 	sparcleAnimation,
 	randomSparcleAnimation,
+	clockAnimation,
+	swapAnimation,
 };
 #define FALLBACK_ANIMATION_COUNT (sizeof(fallbackAnimations) / sizeof(fallbackAnimation))
 
