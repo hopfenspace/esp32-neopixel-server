@@ -50,6 +50,11 @@ uint8_t fallbackArgs[256];
 void doNothingAnimation(uint8_t *, size_t, bool);
 void constColorAnimation(uint8_t *, size_t, bool);
 void rainbowAnimation(uint8_t *, size_t, bool);
+void tailAnimation(uint8_t *, size_t, bool);
+void sparcleAnimation(uint8_t *, size_t, bool);
+void randomSparcleAnimation(uint8_t *, size_t, bool);
+void clockAnimation(uint8_t *, size_t, bool);
+void swapAnimation(uint8_t *, size_t, bool);
 fallbackAnimation fallbackAnimations[] = {
 	doNothingAnimation,
 	constColorAnimation,
@@ -364,6 +369,7 @@ void sparcleAnimation(uint8_t *args, size_t argLen, bool firstTime)
 	int off = random(0, pixels.numPixels());
 	pixels.setPixelColor(on, color); // defined color random position
 	pixels.setPixelColor(off, 0);
+	pixels.show();
 }
 
 void randomSparcleAnimation(uint8_t *args, size_t argLen, bool firstTime)
