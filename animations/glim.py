@@ -2,27 +2,29 @@ from ESP32NeopixelServer import ESP32NeopixelServer
 import time
 import random
 
-HOST = "10.42.0.222"
-NUM_PIXEL = 300
+from ESP32Config import config
+
+host = config["host"]
+num_pixel = config["num_pixel"]
+sleep_sec = config["sleep_sec"]
+brightness = config["brightness"]
 
 GLIM_COLOR = 0xff7700
-GLIM_BRIGHTNESS = 50
 GLIM_COUNT = 50
-GLIM_SEC = 0.2
 
-stripe = ESP32NeopixelServer(HOST)
-glimColor = ESP32NeopixelServer.adjustBrightness(GLIM_COLOR, GLIM_BRIGHTNESS)
+stripe = ESP32NeopixelServer(host)
+glimColor = ESP32NeopixelServer.adjustBrightness(GLIM_COLOR, brightness)
 
-stripe.fillRange(0, NUM_PIXEL, 0x000000)
+stripe.fillRange(0, num_pixel, 0x000000)
 
 glimming = []
 for i in range(GLIM_COUNT):
-	index = random.randint(0, NUM_PIXEL)
+	index = random.randint(0, num_pixel)
 	stripe.setPixel(index, glimColor)
 	glimming.append(index)
 
 while True:
-	index = random.randint(0, NUM_PIXEL)
+	index = random.randint(0, num_pixel)
 
 	stripe.setPixel(index, glimColor)
 	stripe.setPixel(glimming[0], 0x000000)
@@ -31,4 +33,4 @@ while True:
 	glimming.append(index)
 	glimming.pop(0)
 
-	time.sleep(GLIM_SEC)
+	time.sleep(sleep_sec)

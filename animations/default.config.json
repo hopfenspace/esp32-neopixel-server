@@ -1,0 +1,6 @@
+{
+	"host": "192.168.4.1",
+	"num_pixel": 300,
+	"brightness": 100,
+	"sleep_sec": 0.05
+}

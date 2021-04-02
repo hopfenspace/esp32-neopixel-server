@@ -2,32 +2,35 @@ from ESP32NeopixelServer import ESP32NeopixelServer
 import time
 import random
 
-HOST = "10.42.0.222"
-NUM_PIXEL = 300
+from ESP32Config import config
+
+host = config["host"]
+num_pixel = config["num_pixel"]
+sleep_sec = config["sleep_sec"]
+brightness = config["brightness"]
 
 COLOR = 0xff7700
-BRIGHTNESS = 10
-SLEEP_SEC = 0.1
-FILL_COUNT = 2
+BRIGHTNESS_DECREASE = -1 * max(num_pixel // 5, 1)
+FILL_COUNT = 4
 
-stripe = ESP32NeopixelServer(HOST)
-color = ESP32NeopixelServer.adjustBrightness(COLOR, BRIGHTNESS)
-indices = [i for i in range(NUM_PIXEL)]
+stripe = ESP32NeopixelServer(host)
+color = ESP32NeopixelServer.adjustBrightness(COLOR, brightness)
+indices = [i for i in range(num_pixel)]
 
 while True:
 	random.shuffle(indices)
-	stripe.fillRange(0, NUM_PIXEL, 0x000000)
+	stripe.fillRange(0, num_pixel, 0x000000)
 
 	i = 0
-	while i < NUM_PIXEL:
+	while i < num_pixel:
 		for j in range(FILL_COUNT):
 			stripe.setPixel(indices[i + j], color)
 
 		i += FILL_COUNT
 		stripe.show()
-		time.sleep(SLEEP_SEC)
+		time.sleep(sleep_sec)
 
-	for i in range(BRIGHTNESS, 0, -1):
-		stripe.fillRange(0, NUM_PIXEL, ESP32NeopixelServer.adjustBrightness(COLOR, i))
+	for i in range(brightness, 0, BRIGHTNESS_DECREASE):
+		stripe.fillRange(0, num_pixel, ESP32NeopixelServer.adjustBrightness(COLOR, i))
 		stripe.show()
-		time.sleep(0.1)
+		time.sleep(sleep_sec)

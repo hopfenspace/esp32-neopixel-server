@@ -1,8 +1,11 @@
 from ESP32NeopixelServer import ESP32NeopixelServer
 import time
 
-HOST = "10.42.0.222"
-NUM_PIXEL = 300
+from ESP32Config import config
+
+host = config["host"]
+num_pixel = config["num_pixel"]
+sleep_sec = config["sleep_sec"]
 
 colors = [
 	0xff0000,
@@ -13,21 +16,21 @@ colors = [
 	0x0000ff,
 ]
 
-colors = (NUM_PIXEL // len(colors)) * colors
-stripe = ESP32NeopixelServer(HOST)
+colors = (num_pixel // len(colors)) * colors
+stripe = ESP32NeopixelServer(host)
 
 while True:
-	stripe.fillRange(0, NUM_PIXEL, 0xff0000)
+	stripe.fillRange(0, num_pixel, 0xff0000)
 	stripe.show()
 	time.sleep(1)
 
 
-	stripe.fillRange(0, NUM_PIXEL, 0x00ff00)
+	stripe.fillRange(0, num_pixel, 0x00ff00)
 	stripe.show()
 	time.sleep(1)
 
 
-	stripe.fillRange(0, NUM_PIXEL, 0x0000ff)
+	stripe.fillRange(0, num_pixel, 0x0000ff)
 	stripe.show()
 	time.sleep(1)
 
@@ -39,6 +42,6 @@ while True:
 		first = colors[0]
 		colors = colors[1 : ] + [first]
 
-	stripe.fillRange(0, NUM_PIXEL, 0)
+	stripe.fillRange(0, num_pixel, 0)
 	stripe.show()
-	time.sleep(1)
+	time.sleep(sleep_sec)

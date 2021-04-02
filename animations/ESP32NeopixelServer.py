@@ -1,3 +1,4 @@
+import os
 import socket
 import struct
 
@@ -21,6 +22,10 @@ class ESP32NeopixelServer:
 		if flush:
 			self.sock.send(self.buffer)
 			self.buffer = bytes()
+
+	@staticmethod
+	def rgb2color(r, g, b):
+		return (r << 16) | (g << 8) | b
 
 	@staticmethod
 	def color2rgb(color):
@@ -55,6 +60,10 @@ class ESP32NeopixelServer:
 			packet += struct.pack("!BBB", r, g, b)
 
 		self.sendBytes(packet)
+
+	def setFallback(self, index, args):
+		packet = struct.pack("!BBB", 0x12, index, len(args)) + bytearray(args)
+		self.sendBytes(packet, True)
 
 
 	# TODO... settings commands
