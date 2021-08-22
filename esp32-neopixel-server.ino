@@ -397,19 +397,37 @@ void clockAnimation(uint8_t *args, size_t argLen, bool firstTime)
 		counter = 0;
 		pixels.fill(0, 0, pixels.numPixels() - 1);
 	}
-	if (argLen == 3)
+	if (argLen == 5)
 	{
 		uint32_t color = Adafruit_NeoPixel::Color(args[0], args[1], args[2]);
+		uint32_t speed = args[3]; // leds per function call
+		uint32_t width = args[4]; //with of running LEDs 
+		if (speed < 1)
+		{
+			speed = 1;
+		}
+		if (width < 1)
+		{
+			width = 1;
+		}
 		if (position >= counter)
 		{
-			pixels.setPixelColor(position, color);
-			pixels.setPixelColor(position + 1, 0);
-			position--;
+			if (position - width >= counter)
+			{
+				pixels.fill(color, position - width, width); // switch on new sets of LED
+			}
+			else
+			{
+				pixels.fill(color, counter, position - width - counter);
+			}
+
+			pixels.fill(0, position, position + width);//switch off old set of LEDs
+			position=position-speed;
 		}
-		else
+		else // increases the counter after one cycle
 		{
-			pixels.setPixelColor(counter, color);
-			counter++;
+			pixels.fill(color, counter, width + counter);
+			counter=counter+width;
 			position = pixels.numPixels() - 1;
 		}
 	}
@@ -421,9 +439,9 @@ void swapAnimation(uint8_t *args, size_t argLen, bool firstTime)
 	{
 		uint32_t color = Adafruit_NeoPixel::Color(args[0], args[1], args[2]);
 		int middle = (pixels.numPixels() - 1) / 2;						   //middle of stripe
-		static int counter = 0;											   // counts function calling
+		int counter = 0;												   // counts function calling
 		uint8_t wave = args[3];											   // amount of "waves until reset"
-		static int milestones = 1;										   // how many resetwaves were performed
+		int milestones = 1;												   // how many resetwaves were performed
 		int border = (((pixels.numPixels() - 1) / 2) / wave) * milestones; // border for next blinkiblinki
 		if (firstTime)
 		{
