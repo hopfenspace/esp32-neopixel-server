@@ -65,6 +65,8 @@ fallbackAnimation fallbackAnimations[] = {
 	clockAnimation,
 	swapAnimation,
 };
+
+
 #define FALLBACK_ANIMATION_COUNT (sizeof(fallbackAnimations) / sizeof(fallbackAnimation))
 
 void setup()
@@ -171,12 +173,13 @@ void loop()
 {
 	static uint32_t lastPacket = 0;
 	static bool inFallbackMode = true;
+	static bool masterFallBackMode = true;
 
 	if (inFallbackMode)
 		selectedFallback(fallbackArgs, fallbackArgLen, false);
 
 	uint32_t now = millis();
-	if (!inFallbackMode && selectedFallback && now - lastPacket > SECONDS_UNTIL_FALLBACK * 1000)
+	if (masterFallBackMode && !inFallbackMode && selectedFallback && now - lastPacket > SECONDS_UNTIL_FALLBACK * 1000)
 	{
 		inFallbackMode = true;
 		selectedFallback(fallbackArgs, fallbackArgLen, true);
@@ -255,6 +258,7 @@ void loop()
 			preferences.putUChar(PREFERENCE_WIFI_MODE, server.read() ? 0x01 : 0x00);
 			sendOk();
 			break;
+				
 		case 0x21: // set wifi ssid
 			preferences.putString(PREFERENCE_WIFI_SSID, readString());
 			sendOk();
@@ -271,6 +275,10 @@ void loop()
 			sendOk();
 			break;
 
+		case 0x40: // set FallBackMode mode
+			masterFallBackMode = server.read();
+			sendOk();
+			break;
 		case 0xff: // reboot
 			sendLine("rebooting...");
 			ESP.restart();
