@@ -10,7 +10,7 @@ sleep_sec = config["sleep_sec"]
 brightness = config["brightness"]
 
 COLOR = 0xff7700
-BRIGHTNESS_DECREASE = -1 * max(num_pixel // 5, 1)
+BRIGHTNESS_DECREASE = -1
 FILL_COUNT = 4
 
 stripe = ESP32NeopixelServer(host)

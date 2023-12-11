@@ -6,9 +6,9 @@
 //
 // config parameter
 //
-#define WS2812_PINS 15, 17, 18, 21
-#define WS2812_DEFAULT_COUNT 512
-#define DIGITAL_PINS 1, 2, 3, 4, 5, 6
+#define WS2812_PINS 13 // 14, 15, ...
+#define WS2812_DEFAULT_COUNT 300
+#define DIGITAL_PINS // 13, 14, 15, ...
 #define DIGITAL_DEFAULT_STATE LOW
 #define SECONDS_UNTIL_FALLBACK 10
 
@@ -128,7 +128,7 @@ void setup()
 
 	server.begin(1337);
 
-	uint8_t index = preferences.getUChar(PREFERENCE_FALLBACK_INDEX, 1);
+	uint8_t index = preferences.getUChar(PREFERENCE_FALLBACK_INDEX, 2);
 	fallbackArgLen = preferences.getBytes(PREFERENCE_FALLBACK_ARGUMENT, fallbackArgs, 256);
 	selectedFallback = fallbackAnimations[index];
 	selectedFallback(fallbackArgs, fallbackArgLen, true);
